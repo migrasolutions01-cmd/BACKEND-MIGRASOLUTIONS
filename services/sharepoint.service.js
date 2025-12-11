@@ -1,16 +1,9 @@
-import { SharePointConfig } from '../config/sharepoint.config.js';
-
-export interface UploadResult {
-	success: boolean;
-	fileId?: string;
-	webUrl?: string;
-	error?: string;
-}
-
 /**
  * Obtiene un token de acceso de Microsoft Graph API usando Client Credentials
+ * @param {Object} config
+ * @returns {Promise<string>}
  */
-async function getAccessToken(config: SharePointConfig): Promise<string> {
+async function getAccessToken(config) {
 	const tokenUrl = `https://login.microsoftonline.com/${config.tenantId}/oauth2/v2.0/token`;
 
 	const params = new URLSearchParams({
@@ -39,8 +32,11 @@ async function getAccessToken(config: SharePointConfig): Promise<string> {
 
 /**
  * Obtiene el ID del site de SharePoint a partir de la URL del sitio
+ * @param {string} accessToken
+ * @param {string} siteId
+ * @returns {Promise<string>}
  */
-async function resolveSiteId(accessToken: string, siteId: string): Promise<string> {
+async function resolveSiteId(accessToken, siteId) {
 	if (siteId.includes(',')) {
 		return siteId;
 	}
@@ -73,12 +69,12 @@ async function resolveSiteId(accessToken: string, siteId: string): Promise<strin
 
 /**
  * Obtiene el ID del drive de SharePoint
+ * @param {string} accessToken
+ * @param {string} siteId
+ * @param {string} [driveId]
+ * @returns {Promise<string>}
  */
-async function getDriveId(
-	accessToken: string,
-	siteId: string,
-	driveId?: string
-): Promise<string> {
+async function getDriveId(accessToken, siteId, driveId) {
 	if (driveId) {
 		return driveId;
 	}
@@ -105,12 +101,12 @@ async function getDriveId(
 
 /**
  * Crea una carpeta en SharePoint si no existe
+ * @param {string} accessToken
+ * @param {string} driveId
+ * @param {string} folderPath
+ * @returns {Promise<string>}
  */
-async function ensureFolder(
-	accessToken: string,
-	driveId: string,
-	folderPath: string
-): Promise<string> {
+async function ensureFolder(accessToken, driveId, folderPath) {
 	const baseUrl = `https://graph.microsoft.com/v1.0/drives/${driveId}/root:`;
 	const normalizedPath = folderPath.startsWith('/') ? folderPath : `/${folderPath}`;
 	const fullPath = `${baseUrl}${normalizedPath}:`;
@@ -186,20 +182,26 @@ async function ensureFolder(
 
 /**
  * Sube un archivo a SharePoint
+ * @param {Object} config
+ * @param {string} folderPath
+ * @param {string} fileName
+ * @param {Buffer|string} fileContent
+ * @param {string} [contentType='application/octet-stream']
+ * @returns {Promise<{success: boolean, fileId?: string, webUrl?: string, error?: string}>}
  */
 export async function uploadFileToSharePoint(
-	config: SharePointConfig,
-	folderPath: string,
-	fileName: string,
-	fileContent: Buffer | string,
-	contentType: string = 'application/octet-stream'
-): Promise<UploadResult> {
+	config,
+	folderPath,
+	fileName,
+	fileContent,
+	contentType = 'application/octet-stream'
+) {
 	try {
 		const accessToken = await getAccessToken(config);
 		const driveId = await getDriveId(accessToken, config.siteId, config.driveId);
 		await ensureFolder(accessToken, driveId, folderPath);
 
-		let fileBuffer: ArrayBuffer;
+		let fileBuffer;
 		if (Buffer.isBuffer(fileContent)) {
 			const uint8Array = new Uint8Array(fileContent);
 			fileBuffer = uint8Array.buffer.slice(
@@ -252,8 +254,10 @@ export async function uploadFileToSharePoint(
 
 /**
  * Extrae el número alien de los datos del formulario
+ * @param {Record<string, string>} formData
+ * @returns {string|null}
  */
-export function extractAlienNumber(formData: Record<string, string>): string | null {
+export function extractAlienNumber(formData) {
 	const possibleFields = [
 		'numeroA',
 		'numeroExtranjero',
@@ -274,8 +278,10 @@ export function extractAlienNumber(formData: Record<string, string>): string | n
 
 /**
  * Extrae el número de teléfono de los datos del formulario
+ * @param {Record<string, string>} formData
+ * @returns {string|null}
  */
-export function extractPhoneNumber(formData: Record<string, string>): string | null {
+export function extractPhoneNumber(formData) {
 	const possibleFields = [
 		'telefono',
 		'telefonoContacto',
@@ -302,8 +308,10 @@ export function extractPhoneNumber(formData: Record<string, string>): string | n
 
 /**
  * Obtiene el ID del cliente: número alien, teléfono, o ID temporal
+ * @param {Record<string, string>} formData
+ * @returns {string}
  */
-export function getClientId(formData: Record<string, string>): string {
+export function getClientId(formData) {
 	const alienNumber = extractAlienNumber(formData);
 	if (alienNumber) {
 		return alienNumber;
@@ -319,8 +327,11 @@ export function getClientId(formData: Record<string, string>): string {
 
 /**
  * Construye la ruta de carpeta: {año}/{numero_a || id_temporal}/{tipo_proceso}
+ * @param {string} clientId
+ * @param {string} processType
+ * @returns {string}
  */
-export function buildFolderPath(clientId: string, processType: string): string {
+export function buildFolderPath(clientId, processType) {
 	const year = new Date().getFullYear();
 	return `${year}/${clientId}/${processType}`;
 }

@@ -1,4 +1,3 @@
-import { Request, Response } from 'express';
 import {
 	uploadFileToSharePoint,
 	getClientId,
@@ -6,29 +5,15 @@ import {
 } from '../services/sharepoint.service.js';
 import { sharePointConfig, isSharePointConfigured } from '../config/sharepoint.config.js';
 
-interface MulterFile {
-	fieldname: string;
-	originalname: string;
-	encoding: string;
-	mimetype: string;
-	buffer: Buffer;
-	size: number;
-}
-
-interface FormRequest extends Request {
-	files?: MulterFile[] | { [fieldname: string]: MulterFile[] };
-	body: Record<string, string>;
-}
-
 /**
  * Serializa los datos del formulario a texto plano
+ * @param {Record<string, string>} formData
+ * @param {Array} files
+ * @returns {string}
  */
-const serializeFormData = (
-	formData: Record<string, string>,
-	files: MulterFile[]
-): string => {
-	const parts: string[] = [];
-	const filesList: string[] = [];
+const serializeFormData = (formData, files) => {
+	const parts = [];
+	const filesList = [];
 
 	for (const [key, value] of Object.entries(formData)) {
 		if (typeof value === 'string') {
@@ -52,9 +37,11 @@ const serializeFormData = (
 
 /**
  * Extrae todos los archivos del request de multer
+ * @param {Object} req
+ * @returns {Array}
  */
-const extractFiles = (req: FormRequest): MulterFile[] => {
-	const allFiles: MulterFile[] = [];
+const extractFiles = (req) => {
+	const allFiles = [];
 
 	if (Array.isArray(req.files)) {
 		allFiles.push(...req.files);
@@ -69,8 +56,10 @@ const extractFiles = (req: FormRequest): MulterFile[] => {
 
 /**
  * Controlador para procesar formularios
+ * @param {Object} req
+ * @param {Object} res
  */
-export const submitForm = async (req: FormRequest, res: Response): Promise<void> => {
+export const submitForm = async (req, res) => {
 	try {
 		const formId = req.params.id ?? 'formulario';
 		const timestamp = new Date().toISOString();
@@ -147,8 +136,10 @@ export const submitForm = async (req: FormRequest, res: Response): Promise<void>
 
 /**
  * Health check endpoint
+ * @param {Object} _req
+ * @param {Object} res
  */
-export const healthCheck = (_req: Request, res: Response): void => {
+export const healthCheck = (_req, res) => {
 	res.status(200).json({
 		status: 'ok',
 		sharepoint: isSharePointConfigured() ? 'configured' : 'not_configured',

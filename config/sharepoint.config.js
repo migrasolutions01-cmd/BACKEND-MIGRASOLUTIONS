@@ -1,14 +1,6 @@
 import 'dotenv/config';
 
-export interface SharePointConfig {
-	tenantId: string;
-	clientId: string;
-	clientSecret: string;
-	siteId: string;
-	driveId?: string;
-}
-
-export const sharePointConfig: SharePointConfig = {
+export const sharePointConfig = {
 	tenantId: process.env.SHAREPOINT_TENANT_ID || '',
 	clientId: process.env.SHAREPOINT_CLIENT_ID || '',
 	clientSecret: process.env.SHAREPOINT_CLIENT_SECRET || '',
@@ -21,7 +13,7 @@ export const serverConfig = {
 	corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:4321',
 };
 
-export function isSharePointConfigured(): boolean {
+export function isSharePointConfigured() {
 	return !!(
 		sharePointConfig.tenantId &&
 		sharePointConfig.clientId &&
