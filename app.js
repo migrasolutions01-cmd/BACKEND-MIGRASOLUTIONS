@@ -11,8 +11,13 @@ app.use(
 		origin: serverConfig.corsOrigin,
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 		allowedHeaders: ['Content-Type', 'Authorization'],
+		credentials: true
 	})
 );
+
+// IMPORTANTE para preflight
+app.options("*", cors());
+
 
 // Middleware para parsear JSON
 app.use(express.json());
@@ -41,4 +46,5 @@ app.use((_req, res) => {
 });
 
 export default app;
+
 
