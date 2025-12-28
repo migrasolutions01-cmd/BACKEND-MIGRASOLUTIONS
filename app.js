@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import formsRoutes from './routes/forms.routes.js';
+import reviewsRoutes from './routes/reviews.routes.js';
 import { serverConfig } from './config/sharepoint.config.js';
 
 const app = express();
@@ -27,6 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rutas de la API
 app.use('/api/forms', formsRoutes);
+app.use('/api/reviews', reviewsRoutes);
 
 // Ruta raíz
 app.get('/', (_req, res) => {
@@ -36,6 +38,8 @@ app.get('/', (_req, res) => {
 		endpoints: {
 			health: '/api/forms/health',
 			submitForm: 'POST /api/forms/:id',
+			reviews: '/api/reviews',
+			reviewsStats: '/api/reviews/stats',
 		},
 	});
 });
