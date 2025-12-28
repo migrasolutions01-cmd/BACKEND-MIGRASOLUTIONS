@@ -1,55 +1,43 @@
 import { googleConfig, isGoogleConfigured } from '../config/google.config.js';
 
 /**
- * Obtiene las reseñas de Google usando Places API (New)
- * Solo necesita API Key y Place ID - sin OAuth
+ * Obtiene las reseñas de Google usando Places API Legacy con CID (Business ID)
  * @returns {Promise<Array>}
  */
 export const getGoogleReviews = async () => {
 	if (!isGoogleConfigured()) {
-		throw new Error('Google no está configurado. Se requiere GOOGLE_API_KEY y GOOGLE_PLACE_ID');
+		throw new Error('Google no está configurado. Se requiere GOOGLE_API_KEY y GOOGLE_BUSINESS_ID');
 	}
 
-	const { apiKey, placeId } = googleConfig;
+	const { apiKey, businessId } = googleConfig;
 
 	try {
-		// Usar Google Places API (New)
-		const response = await fetch(
-			`https://places.googleapis.com/v1/places/${placeId}`,
-			{
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-Goog-Api-Key': apiKey,
-					'X-Goog-FieldMask': 'reviews,rating,userRatingCount,displayName',
-				},
-			}
-		);
+		// Usar Places API Legacy con CID (Business ID)
+		const url = `https://maps.googleapis.com/maps/api/place/details/json?cid=${businessId}&fields=name,rating,reviews,user_ratings_total&key=${apiKey}`;
+
+		const response = await fetch(url);
 
 		if (!response.ok) {
-			const error = await response.json().catch(() => ({}));
-			
-			// Mensaje específico si la API no está habilitada
-			if (response.status === 403 && error.error?.message?.includes('has not been used')) {
-				console.error('⚠️  Debes habilitar "Places API (New)" en Google Cloud Console:');
-				console.error('   https://console.cloud.google.com/apis/library/places.googleapis.com');
-				throw new Error('API_NOT_ENABLED');
-			}
-			
-			console.error('Error de Google Places API:', error);
 			throw new Error(`Error de Google API: ${response.status}`);
 		}
 
 		const data = await response.json();
-		const reviews = data.reviews || [];
+
+		if (data.status !== 'OK') {
+			console.error('Error de Google Places API:', data.status, data.error_message);
+			throw new Error(`Error de Google API: ${data.status} - ${data.error_message || ''}`);
+		}
+
+		const reviews = data.result?.reviews || [];
 
 		// Formatear reseñas para el frontend - solo datos públicos
 		return reviews.map((review) => ({
-			author: review.authorAttribution?.displayName || 'Anónimo',
-			profilePhoto: review.authorAttribution?.photoUri || null,
+			author: review.author_name || 'Anónimo',
+			profilePhoto: review.profile_photo_url || null,
 			rating: review.rating || 0,
-			comment: review.text?.text || review.originalText?.text || '',
-			relativeDate: review.relativePublishTimeDescription || '',
+			comment: review.text || '',
+			date: formatDate(review.time),
+			relativeDate: review.relative_time_description || '',
 		}));
 	} catch (error) {
 		console.error('Error obteniendo reseñas:', error.message);
@@ -63,43 +51,48 @@ export const getGoogleReviews = async () => {
  */
 export const getPlaceStats = async () => {
 	if (!isGoogleConfigured()) {
-		throw new Error('Google no está configurado. Se requiere GOOGLE_API_KEY y GOOGLE_PLACE_ID');
+		throw new Error('Google no está configurado. Se requiere GOOGLE_API_KEY y GOOGLE_BUSINESS_ID');
 	}
 
-	const { apiKey, placeId } = googleConfig;
+	const { apiKey, businessId } = googleConfig;
 
 	try {
-		const response = await fetch(
-			`https://places.googleapis.com/v1/places/${placeId}`,
-			{
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-Goog-Api-Key': apiKey,
-					'X-Goog-FieldMask': 'rating,userRatingCount,displayName',
-				},
-			}
-		);
+		const url = `https://maps.googleapis.com/maps/api/place/details/json?cid=${businessId}&fields=name,rating,user_ratings_total&key=${apiKey}`;
+
+		const response = await fetch(url);
 
 		if (!response.ok) {
-			const error = await response.json().catch(() => ({}));
-			
-			if (response.status === 403 && error.error?.message?.includes('has not been used')) {
-				throw new Error('API_NOT_ENABLED');
-			}
-			
 			throw new Error(`Error de Google API: ${response.status}`);
 		}
 
 		const data = await response.json();
 
+		if (data.status !== 'OK') {
+			throw new Error(`Error de Google API: ${data.status} - ${data.error_message || ''}`);
+		}
+
 		return {
-			name: data.displayName?.text || '',
-			averageRating: data.rating || 0,
-			totalReviews: data.userRatingCount || 0,
+			name: data.result?.name || '',
+			averageRating: data.result?.rating || 0,
+			totalReviews: data.result?.user_ratings_total || 0,
 		};
 	} catch (error) {
 		console.error('Error obteniendo estadísticas:', error.message);
 		throw error;
+	}
+};
+
+/**
+ * Convierte timestamp Unix a fecha legible
+ * @param {number} timestamp
+ * @returns {string}
+ */
+const formatDate = (timestamp) => {
+	if (!timestamp) return '';
+	try {
+		const date = new Date(timestamp * 1000);
+		return date.toISOString().split('T')[0];
+	} catch {
+		return '';
 	}
 };
