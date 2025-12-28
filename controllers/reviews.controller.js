@@ -57,7 +57,7 @@ export const getStats = async (_req, res) => {
 
 		res.status(500).json({
 			success: false,
-			message: 'Error al obtener estadísticas',
+			message:  error.message,
 			data: null,
 		});
 	}
