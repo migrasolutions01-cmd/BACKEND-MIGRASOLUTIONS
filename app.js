@@ -39,7 +39,6 @@ app.get('/', (_req, res) => {
 			health: '/api/forms/health',
 			submitForm: 'POST /api/forms/:id',
 			reviews: '/api/reviews',
-			reviewsStats: '/api/reviews/stats',
 		},
 	});
 });
