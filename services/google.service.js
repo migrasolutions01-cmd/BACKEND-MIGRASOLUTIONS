@@ -41,3 +41,33 @@ export const getGoogleReviews = async () => {
 		date: r.createTime,
 	}));
 };
+
+/**
+ * Obtiene las estadísticas del lugar de Google My Business
+ * @returns {Promise<Object>}
+ */
+export const getPlaceStats = async () => {
+	const accountId = process.env.GOOGLE_ACCOUNT_ID;
+	const locationId = process.env.GOOGLE_LOCATION_ID;
+
+	if (!accountId || !locationId) {
+		throw new Error('GOOGLE_ACCOUNT_ID y GOOGLE_LOCATION_ID son requeridos');
+	}
+
+	const mybusiness = google.mybusiness({
+		version: 'v4',
+		auth: oauth2Client,
+	});
+
+	const response = await mybusiness.accounts.locations.get({
+		name: `accounts/${accountId}/locations/${locationId}`,
+	});
+
+	const location = response.data;
+
+	return {
+		name: location.locationName,
+		averageRating: location.locationState?.averageRating || null,
+		totalReviews: location.locationState?.totalReviewCount || 0,
+	};
+};
