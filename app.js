@@ -6,15 +6,8 @@ import { serverConfig } from './config/sharepoint.config.js';
 
 const app = express();
 
-// Middleware de CORS
-app.use(
-	cors({
-		origin: serverConfig.corsOrigin,
-		methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-		allowedHeaders: ['Content-Type', 'Authorization'],
-		credentials: true
-	})
-);
+// Middleware de CORS - Permitir todo
+app.use(cors());
 
 // IMPORTANTE para preflight
 app.options("*", cors());
