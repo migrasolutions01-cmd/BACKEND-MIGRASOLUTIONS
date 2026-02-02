@@ -9,13 +9,10 @@
  */
 export const isGoogleConfigured = () => {
 	const requiredVars = [
-		'GOOGLE_CLIENT_ID',
-		'GOOGLE_CLIENT_SECRET',
-		'GOOGLE_REFRESH_TOKEN',
-		'GOOGLE_ACCOUNT_ID',
-		'GOOGLE_LOCATION_ID',
+		'GOOGLE_API_KEY',
+		'GOOGLE_PLACE_ID',
+		'GOOGLE_BUSINESS_ID',
 	];
-
 	return requiredVars.every((varName) => {
 		const value = process.env[varName];
 		return value && value.trim() !== '';
