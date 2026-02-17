@@ -1,4 +1,4 @@
-import { getGoogleReviews, getPlaceStats } from '../services/google.service.js';
+import { getGoogleReviews, getPlaceStats, findPlaceByQuery } from '../services/google.service.js';
 import { isGoogleConfigured } from '../config/google.config.js';
 
 /**
@@ -58,6 +58,46 @@ export const getStats = async (_req, res) => {
 		res.status(500).json({
 			success: false,
 			message:  error.message,
+			data: null,
+		});
+	}
+};
+
+/**
+ * Resuelve el Place ID del negocio por nombre. Útil para obtener el ID correcto
+ * (perfil del negocio, no la dirección) y ponerlo en GOOGLE_PLACE_ID.
+ * GET /api/reviews/place-id?query=M-MIGRATION%20LLC%20Elmhurst
+ */
+export const resolvePlaceId = async (req, res) => {
+	try {
+		const query = req.query?.query?.trim();
+		if (!query) {
+			return res.status(400).json({
+				success: false,
+				message: 'Falta el parámetro query (ej: ?query=M-MIGRATION%20LLC%20Elmhurst)',
+				data: null,
+			});
+		}
+
+		const place = await findPlaceByQuery(query);
+		if (!place) {
+			return res.status(404).json({
+				success: false,
+				message: 'No se encontró ningún lugar con esa búsqueda',
+				data: null,
+			});
+		}
+
+		res.json({
+			success: true,
+			message: 'Copia place_id a GOOGLE_PLACE_ID en tu .env para usar este negocio.',
+			data: place,
+		});
+	} catch (error) {
+		console.error('Error resolviendo place id:', error.message);
+		res.status(500).json({
+			success: false,
+			message: error.message,
 			data: null,
 		});
 	}
